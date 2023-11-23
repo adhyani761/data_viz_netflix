@@ -16,6 +16,15 @@
 dat <- read.csv("NFLX.csv", header=T)
 View(dat)
 dat<-dat[,-6]
+
+
+#Creation of some new columns
+library(dplyr)
+dat$Market_Cap <- dat$Open * dat$Volume
+dat$volatilty <- (dat$Close / lag(dat$Close))-1
+dat$volatilty[1]<-0
+dat$Cumulative_Return <- cumprod(1 + dat$volatilty)
+
 #This dataset contains the stock price values of Netflix from 2018 to 2022.
 #Feature Description:
 #Date - Date of open market
@@ -24,14 +33,16 @@ dat<-dat[,-6]
 #Low - Lowest price during open period
 #Close - Price when market is closed
 #Volume - number of shares traded
-
-
+##Created Columns
+#Cumulative_Return - on an investment is the aggregate amount that the investment has gained or lost over time
+#Market_Capatalization-  refers to the total dollar market value of a company's outstanding shares of stock
+#Volatility- the rate at which the price of a stock increases or decreases over a particular period.
 ```
 
 ```{r}
 #Dimesnsions of the data
 dim(dat)
-#1009    6
+#1009    9
 
 
 #BASIC STATISTICS TO GET THE IDEA ABOUT THE DATA
@@ -87,11 +98,15 @@ ggplot(dat, aes(x = Volume)) +
   labs(title = "Volume Distribution", x = "Volume", y = "Frequency") +
   theme_minimal()
 ```
+
 ```{r}
 
 dat |>
   ggplot() +
   aes(x = Open, y = Close)+
-  geom_point()
+  geom_point()+
+  geom_smooth(method = "lm",
+              formula = 'y ~ x',
+              se = FALSE)
 
 ```
