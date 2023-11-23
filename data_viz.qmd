@@ -1,0 +1,97 @@
+```{r}
+#The objective is to perform a stock price prediction analysis on the "Netflix Stock" dataset, #covering the period from 2018 to 2022.Our goal is to build a linear regression model to predict the #closing prices of Netflix stock based on historical data.
+#KEY STEPS
+#1)EDA
+#2) Data Pre-Processing(Training testing Split)
+#3) Linear Regression model
+#4) Prediction 
+#FINAL RESULT
+# A plot comparing the predicted values against the actual values
+
+
+```
+
+
+```{r}
+dat <- read.csv("NFLX.csv", header=T)
+View(dat)
+dat<-dat[,-6]
+#This dataset contains the stock price values of Netflix from 2018 to 2022.
+#Feature Description:
+#Date - Date of open market
+#Open - Price when market opens
+#High - Highest price during open period
+#Low - Lowest price during open period
+#Close - Price when market is closed
+#Volume - number of shares traded
+
+
+```
+
+```{r}
+#Dimesnsions of the data
+dim(dat)
+#1009    6
+
+
+#BASIC STATISTICS TO GET THE IDEA ABOUT THE DATA
+library(purrr)
+map(dat[,-1], mean) |>
+  str()
+#list of 5
+#$ Open  : num 419
+#$ High  : num 425
+#$ Low   : num 412
+#$ Close : num 419
+#$ Volume: num 7570685
+map(dat[,-1], max) |>
+  str()
+#List of 5
+#$ Open  : num 692
+#$ High  : num 701
+#$ Low   : num 686
+#$ Close : num 692
+#$ Volume: int 58904300
+map(dat[,-1], min) |>
+  str()
+#List of 5
+#$ Open  : num 234
+#$ High  : num 251
+#$ Low   : num 231
+#$ Close : num 234
+#$ Volume: int 1144000
+#To check NA values
+missing_counts <- colSums(is.na(dat))
+missing_counts
+#No missing values in the dataset
+
+```
+
+
+
+```{r}
+#Some graphs to get the hang of the data
+library(ggplot2)
+dat$Date <- as.Date(dat$Date)
+ggplot(dat, aes(x = Date)) +
+  geom_line(aes(y = Open, color = "Open Price"), linetype = "solid") +
+  geom_line(aes(y = Close, color = "Close Price"), linetype = "dashed") +
+  labs(title = "Open Price vs Close Price", x = "Date", y = "Open vs Close Price") +
+  scale_color_manual(values = c("Open Price" = "red", "Close Price" = "green")) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(dat, aes(x = Volume)) +
+  geom_histogram( fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Volume Distribution", x = "Volume", y = "Frequency") +
+  theme_minimal()
+```
+```{r}
+
+dat |>
+  ggplot() +
+  aes(x = Open, y = Close)+
+  geom_point()
+
+```
