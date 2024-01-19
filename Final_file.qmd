@@ -1,0 +1,678 @@
+---
+format: html
+editor: visual
+---
+
+```{r}
+#Gaining insights from data analyst jobs can be valuable for various reasons:
+#Industry Trends
+#Skill Requirements
+#Salary Information
+#Industry Preferences
+#Job Market Dynamics
+#Glassdoor is an American website where current and former employees anonymously review companies
+#Columns of Dataset
+#1) Job Title
+#2) Job Description
+#3) Rating 
+#4) Company Name
+#5) Location
+#6) Size
+#7) Industry
+#8) Sector
+#9) Revenue
+#10)Salary Estimate
+#SOURCE-https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs
+```
+
+```{r}
+data<-read.csv("DataAnalyst.csv")
+#View(data)
+dim(data)
+# 2253 rows and 15 columns
+data<-data[,-1]
+```
+
+```{r}
+# Replace -1 with NA
+data[data == -1] <- NA
+
+# Replace -1.0 with NA
+data[data == -1.0] <- NA
+
+# Replace '-1' with NA
+data[data == '-1'] <- NA
+
+```
+
+```{r}
+library(dplyr)
+
+data <- data %>%
+  mutate(Job.Title = case_when(
+    Job.Title %in% c('Sr. Data Analyst', 'sr. data analyst', 'Sr Data Analyst', 'sr data analyst', 'senior data analyst', 'Senior Data Analyst', 'Data Analyst III', 'data analyst iii', 'senior data analyst') ~ 'Senior Data Analyst',
+    Job.Title %in% c('Data Analyst I', 'data analyst i', 'Data Analyst Junior', 'data analyst junior', 'Junior Data Analyst', 'Junior Data AnalystI', 'Junior Data Analystl') ~ 'Junior Data Analyst',
+    Job.Title %in% c('Data Analyst II', 'data analyst ii', 'Middle Data Analyst') ~ 'Middle Data Analyst',
+    TRUE ~ Job.Title))  
+```
+
+```{r}
+df<-data
+library(readr)
+library(tidyr)
+
+df <- df %>%
+  separate(Salary.Estimate, into = c("min_value", "max_value"), sep = "-")
+# Extracting numbers only
+df$min_salary <- parse_number(df$min_value)
+df$max_salary <- parse_number(df$max_value)
+
+# Removing company name, location, min_value and max_value in cleaner3
+df <- df %>% 
+  select(-min_value,-max_value, )
+# Multiplying min_salary and max_salary by 1000
+df$min_salary_k <- df$min_salary * 1000
+df$max_salary_k <- df$max_salary * 1000
+# Removing min_salary and max_salary
+df <- df %>% 
+  select(-min_salary, -max_salary)
+# Creating Average Salary column
+df$average_salary = (df$min_salary_k + df$max_salary_k)/2
+```
+
+```{r}
+library(stringr)
+
+df$SQL <- str_detect(df$Job.Description, "SQL")
+df$Python <- str_detect(df$Job.Description, "Python")
+df$R <- str_detect(df$Job.Description, "\\bR\\b")  
+df$Tableau <- str_detect(df$Job.Description, "Tableau")
+df$PowerBI <- str_detect(df$Job.Description, "PowerBI|Power BI")
+df$Excel <- str_detect(df$Job.Description, "Excel")
+df$Java <- str_detect(df$Job.Description, "Java")
+df$AWS <- str_detect(df$Job.Description, "AWS")
+df$Spark <- str_detect(df$Job.Description, "Spark")
+df$PowerPoint <- str_detect(df$Job.Description, "PowerPoint")
+df$Snowflake <- str_detect(df$Job.Description, "Snowflake")
+df$Hadoop <- str_detect(df$Job.Description, "Hadoop")
+df$VBA <- str_detect(df$Job.Description, "VBA")
+df$Azure <- str_detect(df$Job.Description, "Azure")
+df$Scala <- str_detect(df$Job.Description, "Scala")
+df$Kafka <- str_detect(df$Job.Description, "Kafka")
+df$Looker <- str_detect(df$Job.Description, "Looker")
+df$Word <- str_detect(df$Job.Description, "Word")
+
+# Creating Degree Indices
+df$Bachelor <- str_detect(df$Job.Description, "Bachelor")
+df$Master <- str_detect(df$Job.Description, "Master")
+df$No_Degree <- !str_detect(df$Job.Description, "Bachelor") &
+  !str_detect(df$Job.Description, "Master")
+```
+
+```{r}
+# Creating Job Title Indices
+
+library(stringr)
+
+df$Science <- str_detect(df$Job.Title, "Science|Scientist")
+df$Business <- str_detect(df$Job.Title, "Business")
+df$Engineer <- str_detect(df$Job.Title, "Engineer")
+
+```
+
+```{r}
+skills_df <- data.frame(
+  skills = c("SQL", "Python", "R", "Excel", "Tableau", "PowerBI", "PowerPoint", "Word", "Azure", "Java", "Spark", "Snowflake", "Hadoop", "VBA", "Scala", "Kafka", "Looker")
+)
+
+skills_df <- skills_df %>%
+  mutate(
+    mean_salary = sapply(skills, function(skill) {
+      round(mean(df$average_salary[df[[skill]] == TRUE], na.rm = TRUE), 2)
+    })
+  )
+skills_df <- skills_df %>%
+  mutate(
+    percentage = sapply(skills, function(skill) {
+      round(sum(df[[skill]] == TRUE)/2253*100, 2)
+    })
+  )
+```
+
+```{r}
+degree_df <- data.frame(degree = c("bachelor", "master", "no_degree"),
+                     mean_salary = c(round(mean(df$average_salary[df$Bachelor == "TRUE"],na.rm = TRUE)), 
+                                     round(mean(df$average_salary[df$Master == "TRUE"],na.rm = TRUE)), 
+                                     round(mean(df$average_salary[df$No_Degree == "TRUE"],na.rm = TRUE))),
+                     percentage = c(round(sum(df$Bachelor == "TRUE")/2253*100, 2), 
+                                    round(sum(df$Master == "TRUE")/2253*100, 2), 
+                                    round(sum(df$No_Degree == "TRUE")/2253*100, 2)))
+```
+
+```{r}
+job_df <- data.frame(Field = c("Science", "Business", "Engineer"),
+                     mean_salary = c(round(mean(df$average_salary[df$Science == "TRUE"])), 
+                                     round(mean(df$average_salary[df$Business == "TRUE"])), 
+                                     round(mean(df$average_salary[df$Engineer == "TRUE"]))),
+                                     
+                     percentage = c(round(sum(df$Science == "TRUE")/2253*100, 2), 
+                                    round(sum(df$Business == "TRUE")/2253*100, 2), 
+                                    round(sum(df$Engineer == "TRUE")/2253*100, 2)))
+                                    
+```
+
+```{r}
+ggplot(df, aes(x = average_salary,fill = ..group.. )) +
+  geom_boxplot() +
+  labs(x = 'Average Salary', y = 'Count', title = 'Distribution of Average Salary') +
+  scale_fill_viridis_c(option = "plasma", direction = -1,guide = "none")
+```
+
+```{r}
+ggplot(df, aes(x = average_salary)) +
+  geom_density(fill = "skyblue", color = "blue", alpha = 0.7) +
+  labs(title = "Kernel Density Plot", x = "Salary Mean", y = "Density") +
+  theme_minimal()
+```
+```{r}
+library(ggplot2)
+
+
+data$Size <- factor(data$Size) 
+
+
+ ggplot(data, aes(x = Size)) +
+  geom_bar(fill = "red") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Company Size") +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+
+```{r}
+ data$Type.of.ownership <- factor(data$Type.of.ownership) 
+
+
+ ggplot(data, aes(x =Type.of.ownership)) +
+  geom_bar(fill = "blue") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Type of ownership") +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+```{r}
+library(plotly)
+
+Scatter_plot1<- plot_ly(
+  df,
+  x = ~Rating,
+  y = ~`Company.Name`,
+  color = ~Rating,
+  type = 'scatter',
+  mode = 'markers',
+  marker = list(size = 10),
+  text = ~paste("Headquarters: ", Headquarters, "<br>",
+               "Location: ", Location, "<br>",
+               "Industry: ", Industry, "<br>",
+               "Sector: ", Sector),
+  hoverinfo = 'text'
+) %>%
+  layout(title = 'Data Analyst jobs')
+
+Scatter_plot1
+```
+```{r}
+scatter_plot <- plot_ly(df, 
+                        x = ~average_salary, 
+                        y = ~Rating, 
+                        type = "scatter", 
+                        mode = "markers", 
+                        marker = list(color = ~Rating, size = 10),
+                        text = ~paste("Rating: ", Rating)
+)
+
+
+scatter_plot2 <- scatter_plot %>% 
+  layout(title = "Scatter Plot of Average Salary and Rating",
+         xaxis = list(title = "Average Salary"),
+         yaxis = list(title = "Rating"))
+         
+
+scatter_plot2
+```
+```{r}
+library(ggplot2)
+a<-ggplot(data = skills_df, aes(x = percentage, y = reorder(skills, percentage), fill = reorder(skills, percentage))) +
+  geom_col() +
+geom_text(aes(label = percentage), hjust = 0, colour = "Black") +
+theme(legend.position="none") +
+  labs(x = "Occurrence (%)", y = "Skills",
+       title ="Skills vs Percentage of Occurrence",
+       subtitle = "Which skills are requested most?",
+       caption = "According to data on glassdoor .
+       https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs")
+```
+
+```{r}
+skills_df <- skills_df %>%
+  arrange(desc(percentage), desc(mean_salary))
+
+b<-ggplot(data = skills_df, aes(x = mean_salary, y = reorder(skills, -percentage), fill =mean_salary)) +
+  geom_col() +
+  geom_text(aes(label = mean_salary), hjust = 1.25, colour = "white") +
+theme(legend.position="none") +
+  labs(x = "Average Salary", y = "Skills",
+       title ="Skills vs Salary",
+       subtitle = "Which skills are compensated best?",
+       caption = "According to data on glassdoor .
+       https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs")
+```
+
+```{r}
+grid.arrange(a, b, ncol = 2)
+```
+```{r}
+# Degree vs Occurrence plot
+c<-ggplot(data = degree_df, aes(x = percentage, y = reorder(degree, percentage), fill = reorder(degree, percentage))) +
+  geom_col() +
+geom_text(aes(label = percentage), hjust = 2, colour = "white") +
+theme(legend.position="none") +
+  labs(x = "Occurrence (%)", y = "Degree",
+       title ="Degree vs Percentage of Occurence",
+       subtitle = "Which degree are requested most?",
+       caption = "According to data  on glassdoor .
+       https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs")
+```
+
+```{r}
+d<-ggplot(data = degree_df, aes(x = mean_salary, y = reorder(degree, mean_salary), fill = reorder(degree, mean_salary))) +
+  geom_col() +
+geom_text(aes(label = mean_salary), hjust = 2, colour = "white") +
+theme(legend.position="none") +
+  labs(x = "Average Salary", y = "Degree",
+       title ="Degree vs Salary",
+       subtitle = "Which degree are compensated best?",
+       caption = "According to data  on glassdoor .
+       https://www.kaggle.com/datasets/andrewmvd/data-analyst-jobs")
+
+```
+
+```{r}
+grid.arrange(c, d, ncol = 2)
+```
+
+```{r}
+library(wordcloud)
+job_title <- na.omit(data$`Job.Title`)
+
+suppressWarnings({
+  
+  par(mar = c(0, 0, 0, 0))
+
+  # Create a word cloud
+  wordcloud(words = job_title, scale=c(3, 0.5), min.freq=1, random.order=FALSE, colors=brewer.pal(8, "Dark2"),width=15)
+})
+```
+```{r}
+library(plotly)
+
+
+
+# Create a table to count occurrences of each job title
+job_title_counts <- table(df$`Job.Title`)
+
+# Extract the top 20 job titles and their counts
+top_job_titles <- names(sort(job_title_counts, decreasing = TRUE))[1:20]
+top_job_counts <- job_title_counts[top_job_titles]
+
+ plot_ly(
+  x = top_job_titles,
+  y = top_job_counts,
+  type = 'scatter',
+  mode = 'markers+text+lines',
+  marker = list(color = 'blue', size = 10),
+  text = top_job_counts,
+  textposition = 'top center',
+  line = list(color = 'red', dash = 'dash'),
+  name = 'Number of Job Openings'
+) %>%
+  layout(
+    title = "<b>Number of Job Openings by Job titles</b>",
+    xaxis = list(title = "<b>Job Titles</b>", showgrid = TRUE),
+    yaxis = list(title = "<b>Number of Job Opening</b>", showgrid = TRUE),
+    template = 'seaborn',
+    font = list(size = 12, color = 'black', family = "Oswald', sans-serif"),
+    yaxis2 = list(showgrid = TRUE, overlaying = 'y', side = 'right', title = '<b>Number of Job Openings</b>'),
+    legend = list(
+      yanchor = "top",
+      y = 1.3,
+      xanchor = "left",
+      x = 0.78
+    )
+  )
+```
+
+```{r}
+library(plotly)
+
+
+industry_counts <- table(df$Industry)
+
+# Extract the top 20 industries and their counts
+top_industries <- names(sort(industry_counts, decreasing = TRUE))[1:20]
+top_industry_counts <- industry_counts[top_industries]
+
+ plot_ly(
+  y = top_industries,
+  x = top_industry_counts,
+  type = 'scatter',
+  mode = 'markers+text+lines',
+  marker = list(color = 'blue', size = 10),
+  text = top_industry_counts,
+  textposition = 'top center',
+  line = list(color = 'red', dash = 'dash'),
+  name = 'Number of Job Openings'
+) %>%
+  layout(
+    title = "<b>Number of Job Openings by Industry</b>",
+    xaxis = list(title = "<b>Number of Job Openings</b>", showgrid = FALSE),
+    yaxis = list(title = "<b>Industry</b>", showgrid = FALSE),
+    template = 'seaborn',
+    font = list(size = 12, color = 'black', family = "Oswald', sans-serif"),
+    yaxis2 = list(showgrid = TRUE, overlaying = 'y', side = 'right', title = '<b>Number of Job Openings</b>'),
+    legend = list(
+      yanchor = "top",
+      y = 1.3,
+      xanchor = "left",
+      x = 0.78
+    )
+  )
+
+```
+
+```{r}
+library(plotly)
+
+
+sector_counts <- table(df$Sector)
+
+# Extract the top 20 industries and their counts
+top_sector <- names(sort(sector_counts, decreasing = TRUE))[1:20]
+top_sector_counts <- sector_counts[top_sector]
+
+# Create a scatter plot with lines and text
+ plot_ly(
+  y = top_sector,
+  x = top_sector_counts,
+  type = 'scatter',
+  mode = 'markers+text+lines',
+  marker = list(color = 'blue', size = 10),
+  text = top_sector_counts,
+  textposition = 'top center',
+  line = list(color = 'red', dash = 'dash'),
+  name = 'Number of Job Openings'
+) %>%
+  layout(
+    title = "<b>Number of Job Openings by Sector</b>",
+    xaxis = list(title = "<b>Number of Job Openings</b>", showgrid = FALSE),
+    yaxis = list(title = "<b>Sector</b>", showgrid = FALSE),
+    template = 'seaborn',
+    font = list(size = 12, color = 'black', family = "Oswald', sans-serif"),
+    yaxis2 = list(showgrid = TRUE, overlaying = 'y', side = 'right', title = '<b>Number of Job Openings</b>'),
+    legend = list(
+      yanchor = "top",
+      y = 1.3,
+      xanchor = "left",
+      x = 0.78
+    )
+  )
+```
+```{r}
+library(ggplot2)
+
+
+df11 <- df %>%
+  group_by(Location) %>%
+  summarize(Min_Salary = mean(min_salary_k), Max_Salary = mean(max_salary_k)) %>%
+  arrange(desc(Max_Salary), desc(Min_Salary)) %>%
+  head(20)
+
+
+ggplot(df11, aes(x = Location)) +
+  geom_bar(aes(y = Min_Salary), stat = "identity", fill = "blue",  position = position_dodge(width = 0.8), alpha = 0.7) +
+  geom_bar(aes(y = Max_Salary), stat = "identity", fill = "red",  position = position_dodge(width = 0.8), alpha = 0.7) +
+  labs(title = "Top 20 cities with their minimum and maximum salaries") +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+job_locations <- as.data.frame(table(df$Location))
+
+
+colnames(job_locations) <- c("Location", "counts")
+job_locations$Location <- as.character(job_locations$Location)
+
+
+job_locations$state <- sapply(strsplit(job_locations$Location, ','), function(x) tail(x, 1))
+
+top30_data <- head(job_locations[order(job_locations$counts, decreasing = TRUE), ], 30)
+
+hierarchical_data <- data.frame(
+  path = paste( top30_data$state, top30_data$Location),
+  values = top30_data
+)
+
+
+treemap_plot <- plot_ly(hierarchical_data, 
+                        labels = ~path, 
+                        parents = ~"All", 
+                        values = ~top30_data$counts, 
+                        type = "treemap")
+
+
+treemap_plot <- treemap_plot %>% 
+  layout(title = "Top 30 Treemap of Job Locations")
+
+
+treemap_plot
+```
+
+```{r}
+com <- table(df$`Company.Name`)
+company <- data.frame(Company = names(com), Number= as.numeric(com))
+
+options(repr.plot.width=10, repr.plot.height=8)
+Sys.setenv("plotly_RENDERER" = "svg")
+
+plot_treemap <- function(dataframe, variable, value, top_n = 30) {
+  dataframe <- dataframe %>%
+    arrange(desc(.data[[value]])) %>%
+    slice_head(n = top_n)  # Select the top n rows
+  
+  fig <- plot_ly(
+    data = dataframe,
+    labels = ~Company,
+    parents = ~"",
+    values = ~Number,
+    type = 'treemap',
+    hoverinfo = 'label+text+value',
+    marker = list(colors = RColorBrewer::brewer.pal(8, "Set1"))
+  )
+  
+  fig <- fig %>% layout(title = paste("Top", top_n, "Companies with Number of Jobs"),
+                        margin = list(l = 0, r = 0, b = 0, t = 30),
+                        uniformtext = list(minsize = 10, mode = 'hide'))
+  
+  fig
+}
+
+plot_treemap(company, 'Company', 'Number', top_n = 30)
+
+```
+
+
+```{r}
+# Group by sector and calculate median salaries
+top_salary_sector <- df %>%
+  group_by(Sector) %>%
+  summarize(
+    lowest_salary_avg = median(min_salary_k),
+    highest_salary_avg = median(max_salary_k)
+  ) %>%
+  arrange(desc(lowest_salary_avg)) %>%
+  filter(!is.na(Sector))  
+
+
+ggplot(top_salary_sector, aes(x = lowest_salary_avg, xend = highest_salary_avg, y = reorder(Sector, lowest_salary_avg))) +
+  geom_segment(aes(yend = reorder(Sector, highest_salary_avg)), color = 'dimgrey', alpha = 0.6, size = 2) +
+  geom_point(aes(y = reorder(Sector, lowest_salary_avg)), color = 'royalblue', size = 3, label = 'Lowest Salary Average') +
+  geom_point(aes(y = reorder(Sector, highest_salary_avg)), color = 'seagreen', size = 3, label = 'Highest Salary Average') +
+  scale_y_discrete(limits = rev(top_salary_sector$sector)) +
+  scale_x_continuous(breaks = seq(40, 110, 10), labels = paste0(seq(40, 110, 10), 'K')) +
+  labs(title = 'Range of Salary for Data Analyst Jobs by Job Sector',
+       y = 'Job Sector',
+       x = 'Salary ($)'
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1)) +
+  geom_text(aes(x = lowest_salary_avg, y = reorder(Sector, lowest_salary_avg),
+                label = paste0('$', lowest_salary_avg)), vjust = -0.5, color = 'black', size = 3) +
+  geom_text(aes(x = highest_salary_avg, y = reorder(Sector, highest_salary_avg),
+                label = paste0('$', highest_salary_avg)), vjust = -0.5, color = 'black', size = 3)
+
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Assuming df is your data frame
+top_salary_sector <- df %>%
+  group_by(Sector) %>%
+  summarize(
+    lowest_salary_avg = median(min_salary_k),
+    highest_salary_avg = median(max_salary_k)
+  ) %>%
+  arrange(desc(lowest_salary_avg)) %>%
+  filter(!is.na(Sector))  
+
+# Merge the summaries back to the main data frame
+df <- left_join(df, top_salary_sector, by = "Sector")
+
+# Create a violin plot
+violin_plot <- ggplot(df, aes(x = reorder(Sector, lowest_salary_avg), y = (min_salary_k + max_salary_k) / 2)) +
+  geom_violin(trim = FALSE, fill = 'skyblue', color = 'dimgrey', alpha = 0.6) +
+  geom_point(aes(y = lowest_salary_avg), color = 'royalblue', size = 3, position = position_dodge(width = 0.75)) +
+  geom_point(aes(y = highest_salary_avg), color = 'seagreen', size = 3, position = position_dodge(width = 0.75)) +
+  labs(title = 'Distribution of Salary for Data Analyst Jobs by Job Sector',
+       y = 'Salary ($)',
+       x = 'Job Sector'
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Display the violin plot
+print(violin_plot)
+
+
+```
+```{r}
+# Group by industry and calculate median salaries
+top_salary_industry <- df %>%
+  group_by(Industry) %>%
+  summarize(
+    lowest_salary_avg = median(min_salary_k),
+    highest_salary_avg = median(max_salary_k)
+  ) %>%
+  arrange(desc(lowest_salary_avg)) %>%
+  filter(!is.na(Industry)) %>%
+  slice_head(n = 25)  # Select the top 20 industries
+
+
+ggplot(top_salary_industry, aes(x = lowest_salary_avg, xend = highest_salary_avg, y = reorder(Industry, lowest_salary_avg))) +
+  geom_segment(aes(yend = reorder(Industry, highest_salary_avg)), color = 'dimgrey', alpha = 0.6, size = 2) +
+  geom_point(aes(y = reorder(Industry, lowest_salary_avg)), color = 'royalblue', size = 3, label = 'Lowest Salary Average') +
+  geom_point(aes(y = reorder(Industry, highest_salary_avg)), color = 'seagreen', size = 3, label = 'Highest Salary Average') +
+  scale_y_discrete(limits = rev(top_salary_industry$Industry)) +
+  scale_x_continuous(breaks = seq(40, 110, 10), labels = paste0(seq(40, 110, 10), 'K')) +
+  labs(title = 'Range of Salary for Data Analyst Jobs by Industry (Top 25)',
+       y = 'Industry',
+       x = 'Salary ($)'
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1)) +
+  geom_text(aes(x = lowest_salary_avg, y = reorder(Industry, lowest_salary_avg),
+                label = paste0('$', lowest_salary_avg)), vjust = -0.5, color = 'black', size = 3) +
+  geom_text(aes(x = highest_salary_avg, y = reorder(Industry, highest_salary_avg),
+                label = paste0('$', highest_salary_avg)), vjust = -0.5, color = 'black', size = 3)
+
+```
+```{r}
+
+# Assuming your dataset is named 'df'
+library(plotly)
+
+# Create an animated bubble chart
+animated_bubble_chart <- plot_ly(
+  df,
+  x = ~max_salary_k,
+  y = ~Rating,
+  size = ~Rating,
+  color = ~Industry,
+  frame = ~max_salary_k,
+  text = ~paste("Industry: ", Industry, "<br>Rating: ", Rating),
+  type = 'scatter',
+  mode = 'markers'
+) %>%
+  animation_opts(frame = 500, redraw = TRUE) %>%
+  layout(
+    title = 'Animated Bubble Chart - Rating Evolution',
+    xaxis = list(title = 'Max Salary (in thousands)'),
+    yaxis = list(title = 'Rating'),
+    showlegend = TRUE
+  )
+
+# Display the animated bubble chart
+animated_bubble_chart
+
+
+```
+
+
+```{r}
+# Install and load required packages
+suppressWarnings(install.packages("psych"))
+library(psych)
+
+# Assuming your dataset is named 'df'
+# Subset the data with relevant numerical variables
+numerical_vars <- df[, c("Rating", "max_salary_k", "min_salary_k", "average_salary")]
+
+# Create a multi-panel figure with a correlation heatmap
+suppressWarnings(pairs.panels(numerical_vars, 
+                              method = "pearson",
+                              hist.col = "#75AADB",
+                              density = TRUE,
+                              ellipses = TRUE))
+
+```
+```{r}
+library(ggplot2)
+library(ggExtra)
+
+# Assuming your dataset is named 'df'
+# Scatterplot
+theme_set(theme_bw())  # pre-set the bw theme.
+df_select <- df[df$max_salary_k & df$min_salary_k  , ]
+g <- ggplot(df, aes(max_salary_k, min_salary_k)) + 
+  geom_count() + 
+  geom_smooth(method = "lm", se = FALSE)
+
+ggMarginal(g, type = "histogram", fill = "transparent")
+ggMarginal(g, type = "boxplot", fill = "transparent")
+
+
+```
+
